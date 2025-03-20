@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,Chrome=1"/>
+</head>
+<body>
+	<div>
+		<style>
+			[WidgetTag="IPT"] { margin: 8px; padding: 6px; border: 2px solid silver; background:#f0f0ff; }
+			[WidgetTag="IPT"]>div { display:flex; flex-flow:row nowrap; margin:6px 0; }
+			[WidgetTag="IPT"] input { border: 0 solid silver; border-width: 0 0 2px 0;}
+			.NF, .UF { flex:1 1 auto; }
+			[__idx__] .NF, .UF { display:none; }
+			[__idx__] .UF { display:inherit; }
+		</style>
+		<div>Smart Budget</div>
+		<div WidgetTag="IPT">
+			<div>
+				項目名稱:
+				<input type="text" style="flex:1 1 auto;" IPT="N:Value"/></div>
+			<div>
+				價格:
+				<input type="number" min="0" step="0.01" style="flex:1 1 auto;" IPT="O.A:Value"/>
+				<select IPT="O.T:Value"></select>
+			</div>
+			<div>
+				<table border="0">
+					<thead>
+						<tr>
+							<th colspan="2">
+								支付方式:<select IPT="M:Value">
+									<option value="TWD">臺幣</option>
+									<option value="JPY">日幣</option>
+									<option value="EUR">歐元</option>
+									<option value="USD">美金</option>
+									<option value="C_TWD">信用卡(隔月台幣支付)</option>
+									<option value="CP_TWD">預購(臺幣信用卡預付)</option>
+								</select>
+							</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<th>支付方式</th>
+							<td>台幣成本</td>
+							<td>換匯日期</td>
+						</tr>
+						<tr>
+							<th>台幣</th>
+							<td></td>
+							<td></td>
+						</tr>
+						<tr>
+							<th>日幣</th>
+							<td></td>
+							<td></td>
+						</tr>
+						<tr>
+							<th>歐元</th>
+							<td></td>
+							<td></td>
+						</tr>
+						<tr>
+							<th>美金</th>
+							<td></td>
+							<td></td>
+						</tr>
+						<tr>
+							<th>信用卡</th>
+							<td></td>
+							<td></td>
+						</tr>
+						<tr>
+							<th>預購</th>
+							<td></td>
+							<td></td>
+					</tbody>
+				</table>
+			</div>
+			<div IPT="I:Attribute:__idx__" style="text-align:center;">
+				<button class="NF" func="Add">新增</button>
+				<button class="UF" func="Add">編輯</button>
+				<button class="UF" func="Remove">刪除</button>
+				<button class="UF" func="Clear">清空</button>
+			</div>
+		</div>
+		<hr/>
+		<div UIE="List">
+			<table border="1" cellspacing="6" cellpadding="6" width="100%" align="center" style="border:0">
+				<thead>
+					<tr WidgetTag="cn">
+						<th>項目名稱</th>
+						<th>原幣別費用</th>
+						<th>支付方式</th>
+						<th>台幣成本</td>
+					</tr>
+				</thead>
+				<tbody WidgetTag="item">
+					<tr func="Select">
+						<td item="N:text"></td>
+						<td item="O:List" WidgetTag="itt" align="right">
+							<div>
+								<span itt="A:text"></span>
+								(<span itt="T:text"></span>)
+							</div>
+						</td>
+						<td>
+						</td>
+						<td align="right">
+							<div>
+								<span item="R:text"></span>
+								(台幣)
+							</div>
+						</td>
+					</tr>
+				</tbody>
+				<tbody>
+					<tr WidgetTag="tt">
+						<td>Total</td>
+						<td tt="O:List" WidgetTag="ttt" align="right">
+							<div>
+								<span ttt="A:text"></span>
+								(<span ttt="T:text"></span>)
+							</div>
+						</td>
+						<td>
+						</td>
+						<td align="right">
+							<div>
+								<span tt="R:text"></span>
+								(TWD)
+							</div>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</body>
+</html>

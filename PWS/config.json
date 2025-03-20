@@ -1,0 +1,17 @@
+{
+	"host":"0.0.0.0",
+	"port":40788,
+	"index":"index.html",
+	"home":{
+		"GET":"../docs",
+		"POST":"../api",
+		"PUT":"../storage",
+		"LOG":"log"
+	},
+	"options":{
+		"BUFSIZE":1048576,
+		"MAXREQ":32,
+		"MAXREQSIZE":8388608,
+		"MASTER_KEY":"Cyberpiers&Chihlee"
+	}
+}

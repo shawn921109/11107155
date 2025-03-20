@@ -1,0 +1,8 @@
+{
+	"Pages":{
+		"Login":{"F":"tab/Login"},
+		"Welcome":{"F":"tab/Welcome","L":"歡迎光臨"},
+		"SmartBudget":{"F":"tab/SmartBudget","L":"聰明預算"}
+	},
+	"StartPage":"Welcome"
+}

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,Chrome=1"/>
+	<title>Chihlee Smart Piers</title>
+	<link rel="icon" type="image/jpeg" href="https://www.cyberpiers.com/img/Cyberpiers_20241024.jpg"/>
+	<script>
+	class _Base_
+	{	// {{{
+		constructor (E) {
+			this.Root = E;
+		}
+		query (qs) {
+			return this.Root.matches(qs) ? this.Root : this.Root.querySelector(qs);
+		}
+		bind (cb, fkey="func") {
+			if (!this.Root.ClickHandler)
+				this.Root.ClickHandler = function(evt) {
+					try {
+						let f = Piers.DOM(evt.target).find('['+fkey+']');
+						cb(evt, f.getAttribute(fkey));
+						evt.preventDefault();
+						evt.stopPropagation();
+					} catch(x) { }
+				};
+			this.Root.addEventListener("click",this.Root.ClickHandler);
+		}
+	}	// }}}
+
+	class _Header_ extends _Base_
+	{ // {{{
+		constructor (root) {
+			super(root);
+			this.Form = new Piers.Widget.Form (this.query('[WidgetTag="THead"]'));
+			this.bind ((evt,func)=>this.dispatch(evt,func));
+		}
+		dispatch (evt, func) {
+			switch (func) {
+			case "login": case "logout":
+				document.App.Tab.open("Login");
+				break;
+			}
+		}
+		updateUserProfile (pf) {
+			this.Form.set(Object.assign({
+				"_U" : pf.A ? {"L":"登出","A":"logout"} : {"L":"登入","A":"login"},
+				"N" : pf.A || "Guest"
+			},pf))
+		}
+	} // }}}
+
+	class _Tail_ extends _Base_
+	{	// {{{
+		constructor (root) {
+			super(root);
+		}
+	}	// }}}
+
+	class _Bar_ extends _Base_
+	{	// {{{
+		constructor (root) {
+			super(root);
+			this.Form = new Piers.Widget.Form(this.query('[WidgetTag="TBar"]'));
+			this.bind((evt,func)=>this.dispatch(evt,func));
+		}
+		dispatch (evt, func) {
+			document.App.Tab.open(func);
+			this.toggle("fold");
+		}
+		load (ba) {
+			this.Form.set({"Fs":ba})
+		}
+		markActive (tag) {
+			Piers.DOM(this.Root).forEach((e)=>{
+				if (e.getAttribute("func")===tag)
+					e.setAttribute("ACTIVE", "yes");
+				else
+					e.removeAttribute("ACTIVE");
+			},'[func]');
+		}
+		toggle (mode) {
+			let cbm=this.Root;
+			if(!mode) mode=cbm.getAttribute("CBMode")==="fold"?"expand":"fold";
+			cbm.setAttribute("CBMode", mode);
+		}
+	}	// }}}
+
+	class _Tab_ extends _Base_
+	{	// {{{
+		constructor (root, pages) {
+			super(root);
+			this.Form = new Piers.Widget.SlidingTabs(
+				Piers.OBJ(pages).reduce((r,v,k)=>{
+					Piers.DOM({
+						"T":"DIV",
+						"A":{"_PsTab":v.F, "PsTab":k}
+					}).join(r);
+					return r;
+				},Piers.DOM(this.query('[WidgetTag="PsTab"]')).clear().E),
+				{Method:"horizontal"}
+			);
+		}
+		open (tn) {
+			this.Form.set(tn);
+			document.App.Bar.markActive(tn);
+		}
+	}	// }}}
+
+	class _Application_ extends _Base_
+	{	// {{{
+		constructor (pref)
+		{
+			super(document.body);
+			this.Preference = pref;
+			this.UserProfile = {};
+			this.Session = new Piers.Session.MSHome ();
+
+			this.Head = new _Header_(this.query('[PART="Head"]'));
+			this.Tail = new _Tail_(this.query('[PART="Tail"]'));
+			this.Bar = new _Bar_(this.query('[PART="ToolBar"]'));
+			this.Tab = new _Tab_(this.query('[PART="Tab"]'), pref.Pages);
+
+			this.Bar.load(
+				Piers.OBJ(pref.Pages).reduce((r,v,k)=>{
+					if(v.L) r.push({"A":k,"L":v.L});
+					return r;
+				},[])
+			);
+		}
+		async request (url,body)
+		{
+			url=Piers.URL(url);
+			((profile)=>{
+				if (!(profile&&profile.SK)) return;
+				profile = profile.SK.split(":");
+				profile.push(btoa(
+					(new Date().getTime()%3600000)
+					.toString(16).match(/../g)
+					.reduce((r,x)=>r+String.fromCodePoint(parseInt(x,16)),"")
+				));
+				profile.push(Piers.Session.SHA_b64(profile.join(":")));
+				profile.splice(2,1);
+				url.addHeader("Piers-Session",profile.join(":"));
+			})(this.UserProfile);
+
+			if (body) url.setBody(body);
+			return await url.request();
+		}
+		updateUserProfile (pf) {
+			document.body.setAttribute("__mm__",pf.A ? "y" : "n");
+			this.UserProfile = pf;
+			this.Head.updateUserProfile(this.UserProfile);
+		}
+	}	// }}}
+
+	document.onload=async ()=>{
+		document.App = new _Application_(await Piers.URL("pref.json").request());
+		document.body.querySelector('[func="'+(Piers.Env.Args.O.SP||document.App.Preference.StartPage)+'"]').click();
+		document.body.style.opacity=1;
+	};
+	</script>
+
+	<link rel="stylesheet" href="https://www.cyberpiers.com/piers/style.css"/>
+	<script src="http://g3c.cyberpiers.com:4780/piers/init.js"
+			PierEntrance="document.onload"
+			PierXMods="Widget,Session"></script>
+	<style type="text/css">
+		button {
+			margin:2px 4px;
+			padding:2px 8px;
+			font-size:100%;
+			border-radius:8px;
+			background:blue;
+			color:yellow;
+		}
+		button:hover {
+			cursor:pointer;
+			background:white;
+			color:blue;
+		}
+		[Fold="y"] .ToFold { display:none; }
+		[WidgetTag="THead"] { 
+			border:solid darkgreen; border-width:0 0 2px 0;
+			background:#f8fcff; color:darkblue;
+		}
+		[WidgetTag="TTail"] {
+			border:solid darkgreen; border-width:2px 0 0 0;
+			background:darkgreen; color:yellow;
+			font-size:72%;
+		}
+		[WidgetTag="TBar"] {
+			width:100%; height:100%; overflow:auto;
+			background:#F8FFF0; color:darkgreen;
+		}
+		[__mm__="y"] .GuestBlock { display:none; }
+		[__mm__="n"] .MemberBlock { display:none; }
+		[TBar="Fs:List"]>div{
+			margin:8px 0px;
+		}
+		[TBar] button[Active] {
+			background:white;
+			color:black;
+			border-color:white;
+		}
+		[CBMode] {
+			display:flex; flex-flow:row nowrap;
+			position:relative; width:100%; height:100%;
+			justify-content:space-between;
+			align-content:space-between;
+			align-items:center;
+			overflow:hidden;
+		}
+		[CBMode]>.L {
+			flex:0 0 auto;
+			position:relative; width:auto; height:100%;
+			overflow:hidden;
+		}
+		[CBMode]>.V {
+			flex:1 1 auto;
+			position:relative; width:auto; height:100%;
+			overflow:auto;
+		}
+		@media only screen and (orientation: portrait) {
+			[CBMode="fold"]>.L {
+				display:none;
+			}
+			[CBMode]>.V {
+				flex:0 0 auto;
+				width:100%;
+			}
+		}
+	</style>
+</head>
+<body style="opacity:0" __mm__="n">
+<div PsL="VBar">
+	<div PsL="HBar" class="L" PART="Head" WidgetTag="THead" style="padding:3px;margin:5px auto 0;">
+		<table width="100%" border="0" cellspacing="0" cellpadding="0">
+			<tbody style="color:#555555;font-size:4vmin;">
+				<tr>
+					<td style='background:url("https://www.cyberpiers.com/img/Cyberpiers_20241024.jpg") no-repeat left/contain; width:12vmin; height:8vmin;' onclick="document.App.Bar.toggle();"></td>
+					<td style="text-align:left;vertical-align:top">
+            			<div style="font-weight:700;">
+							致理智慧碼頭
+						</div>
+            			<div style="font-size:70%;font-weight:300;">
+							Chihlee Smart Piers
+						</div>
+					</td>
+					<td style="text-align:right;vertical-align:top;padding-right:8px;">
+						<div style="font-size:70%">
+							您好,
+						</div>
+            			<div style="font-weight:800;">
+							<span style="color:blue;" THead="N:text;_U.A:attribute:func" func="login">Guest</span>
+						</div>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+    </div>
+	<div PART="ToolBar" CBMode="expand" style="background:white;">
+		<div class="L" WidgetTag="TBar" style="border:solid darkgreen;border-width:0 2px 0 0;padding:2px 12px;max-width:100%;">
+			<div TBar="Fs:List">
+				<div><button TBar="A:attribute:func;L:text;" style="width:100%;padding:8px 2px 8px 2px;"></button></div>
+			</div>
+		</div>
+		<div PART="Tab" class="V">
+			<div WidgetTag="PsTab" style="position:absolute;width:100%;height:100%;left;0;top:0;"></div>
+		</div>
+	</div>
+	<div PART="Tail" class="L PageTail" style="font-size:10pt;font-weight:200;text-align:right;">
+		<div style="padding:1px 8px 1px 8px">若有相關問題，請洽 +886-917-181525</div>
+	</div>
+</body>
+</html>

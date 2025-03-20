@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,Chrome=1"/>
+</head>
+<body><div class="ActHandler" style="background:white;">
+	<div class="GuestBlock">
+		<table style="position:absolute;width:100%;height:100%;"><tbody><tr>
+			<td align="center" valign="middle">
+				<form onsubmit="return false;">
+					<div>帳號:<input vn="A" type="text"/></div>
+					<div>密碼:<input vn="S" type="password"/></div>
+					<div style="color:red;"><span vn="msg"></span></div>
+					<div><button act="login">登入</button></div>
+				</form>
+		</tr></tbody></table>
+	</div>
+	<div class="MemberBlock">
+		<form onsubmit="return false;" WidgetTag="vn">
+			<table align="center"><tbody><tr>
+				<th align="right">帳號:</th>
+				<td>
+					<span vn="A:text"></span>
+					<button act="logout">登出</button>
+				</td>
+			</tr><tr>
+				<th valign="top" align="right">密碼:</th>
+				<td valign="top">
+					<div style="text-align:center;" Fold="y">
+						<form onsubmit="return false;">
+							<div class="ToFold" style="border:1px solid blue;">
+								<table><tbody>
+									<tr><th align="right">帳號:</th><td><input type="text" vn="A"/></td>
+									<tr><th align="right">新密碼:</th><td><input type="password" vn="S"/></td>
+									<tr><th align="right">密碼確認:</th><td><input type="password" vn="SV"/></td>
+								</tbody></table>
+							</div>
+						</form>
+						<button act="passwd">變更密碼</button>
+					</div>
+				</td>
+			</tr></tbody></table>
+		</form>
+	</div>
+</div></body>
+</html>

@@ -1,0 +1,5 @@
+/log/
+/py/
+__pycache__/
+__pyenv__/
+PWS.pid
