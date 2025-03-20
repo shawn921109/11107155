@@ -25,57 +25,19 @@
 				<select IPT="O.T:Value"></select>
 			</div>
 			<div>
-				<table border="0">
+				<table border="1">
 					<thead>
 						<tr>
-							<th colspan="2">
-								支付方式:<select IPT="M:Value">
-									<option value="TWD">臺幣</option>
-									<option value="JPY">日幣</option>
-									<option value="EUR">歐元</option>
-									<option value="USD">美金</option>
-									<option value="C_TWD">信用卡(隔月台幣支付)</option>
-									<option value="CP_TWD">預購(臺幣信用卡預付)</option>
-								</select>
-							</th>
+							<th>支付方式: <select IPT="M:Value"></select></th>
+							<th>台幣成本</th>
+							<th>換匯日期</th>
 						</tr>
 					</thead>
-					<tbody>
-						<tr>
-							<th>支付方式</th>
-							<td>台幣成本</td>
-							<td>換匯日期</td>
-						</tr>
-						<tr>
-							<th>台幣</th>
-							<td></td>
-							<td></td>
-						</tr>
-						<tr>
-							<th>日幣</th>
-							<td></td>
-							<td></td>
-						</tr>
-						<tr>
-							<th>歐元</th>
-							<td></td>
-							<td></td>
-						</tr>
-						<tr>
-							<th>美金</th>
-							<td></td>
-							<td></td>
-						</tr>
-						<tr>
-							<th>信用卡</th>
-							<td></td>
-							<td></td>
-						</tr>
-						<tr>
-							<th>預購</th>
-							<td></td>
-							<td></td>
-					</tbody>
+					<tbody WidgetTag="PA"><tr>
+						<td PA="N:text"></td>
+						<td PA="V:text"></td>
+						<td PA="M:text"></td>
+					</tr></tbody>
 				</table>
 			</div>
 			<div IPT="I:Attribute:__idx__" style="text-align:center;">
