@@ -2,6 +2,7 @@
 	"Pages":{
 		"Login":{"F":"tab/Login"},
 		"Welcome":{"F":"tab/Welcome","L":"歡迎光臨"},
+		"Tutorial":{"F":"tab/Tutorial","L":"使用指南"},
 		"SmartBudget":{"F":"tab/SmartBudget","L":"聰明預算"}
 	},
 	"StartPage":"Welcome"
