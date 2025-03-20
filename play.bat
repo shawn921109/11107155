@@ -1,4 +1,4 @@
-cd %~dp0/PWS
+cd %~dp0\PWS
 
 if not exist "__pyenv__\python.xxx" (
 	powershell -c Set-ExecutionPolicy unrestricted -Scope CurrentUser
