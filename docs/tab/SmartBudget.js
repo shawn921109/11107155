@@ -36,7 +36,7 @@ document.currentScript.value=async (root,args)=>{
 		} // }}}
 	}
 
-	class CvDB { // 轉換資料庫 {{{
+	class MapDB { // 轉換資料庫
 		constructor (url) { // {{{
 			this.Ref = new YM(new Date(2000,0,1));
 			this._P_ = this.init(url);
@@ -46,13 +46,18 @@ document.currentScript.value=async (root,args)=>{
 			this.DB.USD = [1,1,1,1,1];
 			this.Regression = await Piers.import(Piers.Env.PierPath+"Regression.js");
 		}	// }}}
-		async waitInit () {
+		async waitInit () {	// {{{
 			return await this._P_;
-		}	//
+		}	// }}}
+	}
+	
+	class CxDB extends MapDB {
+		constructor (url) {	// {{{
+			super(url);
+		}	// }}}
 		getRate (cn, x) { // {{{
 			let db = this.DB;
 			if (!(cn in db)) return 1;
-			console.log(db, cn, db[cn]);
 			if (!x) return db[cn][0];
 			let eq = this.Regression('polynomial', [
 				[this.Ref.dist("202502"),db[cn][1]],
@@ -65,13 +70,22 @@ document.currentScript.value=async (root,args)=>{
 			return (x*x*x*x)*eq[4] + (x*x*x)*eq[3] + (x*x)*eq[2] + (x)*eq[1] + eq[0] ;
 		}	// }}}
 		convert (from, to, amount, dt="") { // {{{
-			console.log("Convert",from,to,amount,dt);
 			return amount*this.getRate(to,dt)/this.getRate(from,dt);
 		}	// }}}
-	}	// }}}
+	}
+
+	class LxDB extends MapDB {
+		constructor (url) {	// {{{
+			super(url);
+		}	// }}}
+		convert (from, to, amount, type=0) { // {{{
+			// 1: rent, 3: grocery, 4: restaurant
+			return amount*this.DB[to][type]/this.DB[from][type];
+		}	// }}}
+	}
 
 	// let currency = new CvDB("tab/SmartBudget/Currency.json");
-	let living = new CvDB("tab/SmartBudget/Life.json");
+	// let living = new CvDB("tab/SmartBudget/Life.json");
 	// await currency.convert("EUR","TWD",10000);
 	// await living.convert("Taipei, Taiwan", "New York, NY, United States", 300, 4);
 
@@ -84,7 +98,8 @@ document.currentScript.value=async (root,args)=>{
 	class Input extends Form {
 		constructor (E) {	// {{{
 			super(E);
-			this.XDB = new CvDB("tab/SmartBudget/Currency.json");
+			this.XDB = new CxDB("tab/SmartBudget/Currency.json");
+			this.LDB = new LxDB("tab/SmartBudget/Life.json");
 			this.Hints = new Piers.Widget.List(this.E.querySelector('[WidgetTag="PA"]'));
 			if (E.CHANGE_BIND)
 				E.removeEventListener("change", E.CHANGE_BIND);
@@ -134,6 +149,24 @@ document.currentScript.value=async (root,args)=>{
 					if(k in Dict)
 						Piers.DOM({ "T":"option", "A":{"value":k}, "C":[Dict[k]||k] }).join(e);
 			})(this.E.querySelector('[IPT="O.T:Value"]'));
+			(async (e)=>{ // #LivingCities
+				while (e.firstChild) e.removeChild(e.firstChild);
+				await this.LDB.waitInit();
+				for (let k in this.LDB.DB)
+					Piers.DOM({ "T":"option", "A":{"value":k}, "C":[k] }).join(e);
+			})(this.E.querySelector('#LivingCities'));
+			(async (e)=>{
+				if (e.CHANGE_BIND)
+					e.removeEventListener("change", E.CHANGE_BIND);
+				e.addEventListener("change", E.CHANGE_BIND=(evt) => {
+					let w = gw(e,"Form"), doc=w.get();
+					doc.T = Math.floor(1000*this.LDB.convert("Taipei, Taiwan",doc.D,doc.F,4))/1000;
+					w.set(doc);
+					evt.stopPropagation();
+					evt.preventDefault();
+				});
+			})(this.E.querySelector('[WidgetTag="LCH"]'));
+
 			this.updateHints();
 		}	// }}}
 		updateHints () {	// {{{
