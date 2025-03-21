@@ -96,14 +96,11 @@ document.currentScript.value=async (root,args)=>{
 		}	// }}}
 		convert (from, to, amount, type=0) { // {{{
 			// 1: rent, 3: grocery, 4: restaurant
-			return amount*this.DB[to][type]/this.DB[from][type];
+			if (to in this.DB && from in this.DB && type in this.DB[to] && type in this.DB[from])
+				return amount*this.DB[to][type]/this.DB[from][type];
+			return 0;
 		}	// }}}
 	}
-
-	// let currency = new CvDB("tab/SmartBudget/Currency.json");
-	// let living = new CvDB("tab/SmartBudget/Life.json");
-	// await currency.convert("EUR","TWD",10000);
-	// await living.convert("Taipei, Taiwan", "New York, NY, United States", 300, 4);
 
 	class Input extends Form {
 		constructor (E, bkh=()=>0) {	// {{{
@@ -125,10 +122,14 @@ document.currentScript.value=async (root,args)=>{
 					switch(btn.getAttribute("func")){
 					case "Add":
 						(function (doc) {
+							console.log(JSON.stringify(doc));
 							doc.O = [doc.O].reduce((r,v)=>{
 								r[v.T] = parseFloat(v.A);
 								return r;
 							},{});
+							((optdata)=>{
+								doc.R = optdata.find((v)=>v.K===doc.M).V;
+							})(gw('[WidgetTag="PA"]').OptData);
 							console.log("Add",doc);
 							bkh("Add",Object.assign({},doc));
 						})(gw(E).get());
@@ -165,9 +166,11 @@ document.currentScript.value=async (root,args)=>{
 			(async (e)=>{
 				if (e.CHANGE_BIND)
 					e.removeEventListener("change", E.CHANGE_BIND);
-				e.addEventListener("change", E.CHANGE_BIND=(evt) => {
+				e.addEventListener("change", E.CHANGE_BIND=async (evt) => {
 					let w = gw(e,"Form"), doc=w.get();
+					await this.XDB.waitInit();
 					doc.T = Math.floor(1000*this.LDB.convert("Taipei, Taiwan",doc.D,doc.F,4))/1000;
+					doc.TL = Math.floor(1000*this.XDB.convert("TWD",root.querySelector('[IPT="O.T:Value"]').value,doc.T))/1000;
 					w.set(doc);
 					evt.stopPropagation();
 					evt.preventDefault();
@@ -191,8 +194,9 @@ document.currentScript.value=async (root,args)=>{
 				
 				if( doc.O.T && doc.O.A ) {
 					await this.XDB.waitInit();
-					this.Hints.set(Piers.OBJ(p).reduce((r,v,k)=>{
+					this.Hints.set(this.Hints.OptData=Piers.OBJ(p).reduce((r,v,k)=>{
 						r.push({
+							"K":k,
 							"N":Dict[k]||k,
 							"V":Math.floor(this.XDB.convert(doc.O.T,"TWD",doc.O.A,p[k][1].toString())*1000)/1000,
 							"M":p[k][0]
@@ -210,20 +214,18 @@ document.currentScript.value=async (root,args)=>{
 			this.IPT = new Input(root.querySelector('[WidgetTag="IPT"]'), (n,o)=>{
 				switch(n){
 				case "Add" :
-					this.addRecord(o);
-					break;
+					return this.addRecord(o);
 				case "Remove" :
-					console.log("Remove",o);
-					this.removeRecord(o);
+					return this.removeRecord(o);
 				}
 			});
 			this.doc={
 				"CN":{"R":"TWD"},
 				"L":[
-					{"N":"One Dollar","O":{"EUR":1},"M":"TWD"},
-					{"N":"Two Dollar","O":{"USD":2},"M":"TWD"},
-					{"N":"Three Dollar","O":{"USD":3},"M":"TWD"},
-					{"N":"Five Dollar","O":{"JPY":5},"M":"TWD"}
+					{"N":"One","O":{"EUR":1},"M":"C_TWD","R":12},
+					{"N":"Two","O":{"USD":2},"M":"C_TWD","R":24},
+					{"N":"Three","O":{"USD":3},"M":"C_TWD","R":36},
+					{"N":"Five","O":{"JPY":5},"M":"C_TWD","R":48}
 				],
 				"TT":{}
 			};
@@ -265,15 +267,15 @@ document.currentScript.value=async (root,args)=>{
 		}
 		recalc () {
 			let tto={}, self=this;
-			this.doc.L.forEach(function(row){
-				row.R = 0;//TODO self.mdConv(row.O);
+			this.doc.TT.R = 0;
+			this.doc.L.forEach((row)=>{
+				this.doc.TT.R+=row.R;
 				self.mdAdd(tto,row.O);
 			});
 			this.doc.TT.O=tto;
-			//this.doc.TT.R=this.mdConv(tto);
 		}
 		addRecord (r) {
-			if (undefined!==r.I){
+			if (r.I===0 || r.I) {
 				let idx=r.I;
 				delete r.I;
 				this.doc.L[idx]=r;
@@ -294,7 +296,7 @@ document.currentScript.value=async (root,args)=>{
 			gw('[UIE="List"] [WidgetTag="cn"]').set(this.doc.CN);
 			
 			gw('[UIE="List"] [WidgetTag="item"]',"List").set(this.doc.L.reduce(function(r,v){
-				r.push({"N":v.N, "O":oc(v.O), "R":v.R});
+				r.push({"N":v.N, "O":oc(v.O), "M":Dict[v.M], "R":v.R});
 				return r;
 			},[]));
 			gw('[UIE="List"] [WidgetTag="tt"]').set({"O":oc(this.doc.TT.O),"R":this.doc.TT.R});

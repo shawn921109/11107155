@@ -25,17 +25,28 @@
 				<input type="text" style="flex:1 1 auto;" IPT="N:Value"/>
 				<input type="hidden" IPT="I:Value"/>
 			</div>
-			<div>
+			<div class="Folding">
 				<div class="FilledBar">
 					價格:
 					<input type="number" min="0" step="0.01" style="flex:1 1 auto;" IPT="O.A:Value"/>
 					<select IPT="O.T:Value"></select>
+					<button onclick="this.parentNode.parentNode.classList[this.parentNode.parentNode.classList.contains('Folding')?'remove':'add']('Folding')">幫助</button>
 				</div>
 				<div class="Folder" WidgetTag="LCH" >
-					<div>物價轉換工具:</div>
-					<div>台幣參考價格:<input type="number" step="1" LCH="F:Value"></input></div>
+					<div style="color:blue">物價轉換工具:</div>
+					<div>
+						商品類型:
+						<select LCH="C:Value">
+							<option value="1">租金<option>
+							<option value="3">雜貨<option>
+							<option value="4">餐廳<option>
+						</select>
+						台幣參考價格:
+						<input type="number" step="1" LCH="F:Value"></input>
+					</div>
 					<div>目的地:<input list="LivingCities" LCH="D:Value"></input></div>
 					<div>目的地參考臺幣價格:<input type="number" readonly LCH="T:Value"></input></div>
+					<div>目的地當地貨幣價格:<input type="number" readonly LCH="TL:Value"></input></div>
 				</div>
 			</div>
 			<div>
