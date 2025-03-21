@@ -21,20 +21,36 @@ document.currentScript.value=async (root,args)=>{
 
 	class YM {
 		constructor (d) { // {{{
-			if (!d) d = new Date();
+			if (undefined===d) d = new Date();
 			if ("string" === typeof(d)) d=parseInt(d);
 			this.Value = ("number" === typeof(d))
 				? [Math.floor(d/100),(d%100)-1]
 				: [d.getFullYear(),d.getMonth()];
 		} // }}}
+		add (ms) {	// {{{
+			this.Value[1]+=ms;
+			while (this.Value[1]>=12) {
+				this.Value[0]++;
+				this.Value[1]-=12;
+			}
+			while (this.Value[1]<0) {
+				this.Value[0]--;
+				this.Value[1]+=12;
+			}
+			return this;
+		}	// }}}
 		dist (dt) { // {{{
 			if (!(dt instanceof YM)) dt = new YM(dt);
 			return (dt.Value[0] - this.Value[0])*12+dt.Value[1]-this.Value[1];
-		} // }}}
+		}	// }}}
 		toString () { // {{{
-			return this.Value[0]+((v)=>v<10?("0"+v):v)(this.Value[1]+1);
+			console.log("TS:",this.Value);
+			return this.Value[0]+""+((v)=>v<10?("0"+v):v)(this.Value[1]+1);
 		} // }}}
 	}
+
+	console.log((new YM()).add(8).toString());
+	console.log((new YM()).add(-8).toString());
 
 	class MapDB { // 轉換資料庫
 		constructor (url) { // {{{
@@ -89,14 +105,8 @@ document.currentScript.value=async (root,args)=>{
 	// await currency.convert("EUR","TWD",10000);
 	// await living.convert("Taipei, Taiwan", "New York, NY, United States", 300, 4);
 
-	/*let rst = await document.App.request("home/file",{"F":"w","N":"test2","D":{"A":1,"B":2,"C":3}});
-	console.log("Write Test Result is ",rst);
-	rst = await document.App.request("home/file",{"F":"r","N":"test2"});
-	console.log("Data is ",rst.R,rst.D);
-	*/
-
 	class Input extends Form {
-		constructor (E) {	// {{{
+		constructor (E, bkh=()=>0) {	// {{{
 			super(E);
 			this.XDB = new CxDB("tab/SmartBudget/Currency.json");
 			this.LDB = new LxDB("tab/SmartBudget/Life.json");
@@ -119,28 +129,25 @@ document.currentScript.value=async (root,args)=>{
 								r[v.T] = parseFloat(v.A);
 								return r;
 							},{});
-							if (null===doc.I) delete doc.I;
-							B.addRecord(JSON.parse(JSON.stringify(doc)));
-						})(gw(e).get());
+							console.log("Add",doc);
+							bkh("Add",Object.assign({},doc));
+						})(gw(E).get());
 						break;
 					case "Clear":
-						(function (ie) {
-							if (!ie) return;
-							ie.removeAttribute("__idx__");
-						})(Piers.DOM(btn).find('[__idx__]'));
+						(function (doc) {
+							gw(E).clear();
+						})(gw(E).get());
 						break;
 					case "Remove":
-						(function (ie) {
-							if (!ie) return;
-							if (window.confirm("Remove item ? ")) {
-								ie.removeAttribute("__idx__");
-								B.removeRecord(ie);
-							}
-						})(Piers.DOM(btn).find('[__idx__]'));
+						(function (doc) {
+							bkh("Remove",doc.I);
+						})(gw(E).get());
 						break;
 					};
 				} catch(x) {
 				}
+				evt.stopPropagation();
+				evt.preventDefault();
 			});
 			(async (e)=>{ // O.T:Value
 				while (e.firstChild) e.removeChild(e.firstChild);
@@ -173,10 +180,10 @@ document.currentScript.value=async (root,args)=>{
 			let doc = this.get();
 			console.log("INPUT is ",doc);
 
-			let Payments={"TWD":["消費日換匯"],"C_TWD":["消費隔月換匯"],"CP_TWD":["隔月換匯"]};
+			let Payments={"TWD":["消費日換匯",new YM()],"C_TWD":["消費隔月換匯",(new YM()).add(1)],"CP_TWD":["隔月換匯",(new YM()).add(1)]};
 			(async (e)=>{ // M:Value
 				let p={};
-				p[doc.O.T||"TWD"]=["今日換匯"];
+				p[doc.O.T||"TWD"]=["三個月前換匯",(new YM()).add(-3)];
 				p=Object.assign(p,Payments);
 				while (e.firstChild) e.removeChild(e.firstChild);
 				for (let k in p)
@@ -187,7 +194,7 @@ document.currentScript.value=async (root,args)=>{
 					this.Hints.set(Piers.OBJ(p).reduce((r,v,k)=>{
 						r.push({
 							"N":Dict[k]||k,
-							"V":Math.floor(this.XDB.convert(doc.O.T,"TWD",doc.O.A)*1000)/1000,
+							"V":Math.floor(this.XDB.convert(doc.O.T,"TWD",doc.O.A,p[k][1].toString())*1000)/1000,
 							"M":p[k][0]
 						});
 						return r;
@@ -199,33 +206,50 @@ document.currentScript.value=async (root,args)=>{
 	}
 
 	class Book {
-		constructor () {
-			this.IPT = new Input(root.querySelector('[WidgetTag="IPT"]'));
-			this.xrate={
-				"TWD":1,
-				"JPY":0.25,
-				"EUR":34,
-				"USD":33
-			};
-			this.budgets={
-				"TWD":100000,
-				"JPY":100000,
-				"EUR":10000,
-				"USD":10000,
-				"C_TWD":200000,
-				"CP_TWD":200000,
-				"BW":1000000
-			};
+		constructor (E) {
+			this.IPT = new Input(root.querySelector('[WidgetTag="IPT"]'), (n,o)=>{
+				switch(n){
+				case "Add" :
+					this.addRecord(o);
+					break;
+				case "Remove" :
+					console.log("Remove",o);
+					this.removeRecord(o);
+				}
+			});
 			this.doc={
 				"CN":{"R":"TWD"},
 				"L":[
-					{"N":"One Dollar","O":{"EUR":1}},
-					{"N":"Two Dollar","O":{"USD":2}},
-					{"N":"Three Dollar","O":{"USD":3}},
-					{"N":"Five Dollar","O":{"JPY":5}}
+					{"N":"One Dollar","O":{"EUR":1},"M":"TWD"},
+					{"N":"Two Dollar","O":{"USD":2},"M":"TWD"},
+					{"N":"Three Dollar","O":{"USD":3},"M":"TWD"},
+					{"N":"Five Dollar","O":{"JPY":5},"M":"TWD"}
 				],
 				"TT":{}
 			};
+			if(E.CLICK_BIND)
+				E.removeEventListener("click",E.CLICK_BIND);
+			E.addEventListener("click",E.CLICK_BIND=function(evt){
+			try {
+				let btn=Piers.DOM(evt.target).find('[func]');
+				if (!btn) return;
+				switch(btn.getAttribute("func")){
+				case "Select":
+					(function (e) {
+						let doc = gw(e).get();
+						gw('[WidgetTag="IPT"]').set({
+							"N":doc.N,
+							"O":doc.O[0],
+							"I":e.getAttribute("__idx__")
+						});
+					})(btn);
+					break;
+				};
+			} catch(x) {
+			}
+			evt.stopPropagation();
+			evt.preventDefault();
+		});
 		}
 		mdAdd (ov,nv) {
 			for(let t in nv){
@@ -242,11 +266,11 @@ document.currentScript.value=async (root,args)=>{
 		recalc () {
 			let tto={}, self=this;
 			this.doc.L.forEach(function(row){
-				row.R = self.mdConv(row.O);
+				row.R = 0;//TODO self.mdConv(row.O);
 				self.mdAdd(tto,row.O);
 			});
 			this.doc.TT.O=tto;
-			this.doc.TT.R=this.mdConv(tto);
+			//this.doc.TT.R=this.mdConv(tto);
 		}
 		addRecord (r) {
 			if (undefined!==r.I){
@@ -277,31 +301,6 @@ document.currentScript.value=async (root,args)=>{
 		}
 	}
 
-	let B=new Book();
-	B.redraw();
-
-	(function(e){
-		if(e.CLICK_BIND)
-			e.removeEventListener("click",e.CLICK_BIND);
-		e.addEventListener("click",e.CLICK_BIND=function(evt){
-			try {
-				let btn=Piers.DOM(evt.target).find('[func]');
-				if (!btn) return;
-				switch(btn.getAttribute("func")){
-				case "Select":
-					(function (e) {
-						// TODO the input UI only support one record with one dollar type now.
-						let doc = gw(e).get();
-						gw('[WidgetTag="IPT"]').set({
-							"N":doc.N,
-							"O":doc.O[0],
-							"I":e.getAttribute("__idx__")
-						});
-					})(btn);
-					break;
-				};
-			} catch(x) {
-			}
-		});
-	})(root.querySelector('[UIE="List"]'));
+	root.Book = new Book(root.querySelector('[UIE="List"]'));
+	root.Book.redraw();
 };
