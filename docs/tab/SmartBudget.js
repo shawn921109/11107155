@@ -286,6 +286,19 @@ document.currentScript.value=async (root,args)=>{
 			this.doc.L.splice(idx,1);
 			this.redraw();
 		}
+		async drawChart () {
+			let E=document.body.querySelector('[UIE="Plot"]');
+			if (!E.Chart){
+				if (!this.newChart) this.newChart = await Piers.import(Piers.Env.PierPath+"chart.js");
+				E.Chart = new this.newChart(E.querySelector("canvas"));
+			}
+			E.Chart.draw_pie(
+				this.doc.L.reduce((r,v,i)=>{
+					if (v.N in r) v[v.N] += v.R; else r[v.N] = v.R;
+					return r;
+				},{})
+			);
+		}
 		redraw () {
 			this.recalc();
 			function oc(o){
@@ -300,6 +313,8 @@ document.currentScript.value=async (root,args)=>{
 				return r;
 			},[]));
 			gw('[UIE="List"] [WidgetTag="tt"]').set({"O":oc(this.doc.TT.O),"R":this.doc.TT.R});
+
+			this.drawChart();
 		}
 	}
 
