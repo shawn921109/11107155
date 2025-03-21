@@ -5,5 +5,5 @@
 		"Tutorial":{"F":"tab/Tutorial","L":"使用指南"},
 		"SmartBudget":{"F":"tab/SmartBudget","L":"聰明預算"}
 	},
-	"StartPage":"Welcome"
+	"StartPage":"SmartBudget"
 }

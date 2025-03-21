@@ -8,24 +8,35 @@
 	<div>
 		<style>
 			[WidgetTag="IPT"] { margin: 8px; padding: 6px; border: 2px solid silver; background:#f0f0ff; }
-			[WidgetTag="IPT"]>div { display:flex; flex-flow:row nowrap; margin:6px 0; }
+			[WidgetTag="IPT"]>div { margin:6px 0; }
+			.FilledBar { display:flex; flex-flow:row nowrap; }
 			[WidgetTag="IPT"] input { border: 0 solid silver; border-width: 0 0 2px 0;}
 			.NF, .UF { flex:1 1 auto; }
 			[__idx__] .NF, .UF { display:none; }
 			[__idx__] .UF { display:inherit; }
+			.Folding .Folder { display:none; }
+			.Folder { margin:6px; padding:6px; border:2px solid blue; }
 		</style>
 		<div>Smart Budget</div>
 		<div WidgetTag="IPT">
-			<div>
+			<div class="FilledBar">
 				項目名稱:
 				<input type="text" style="flex:1 1 auto;" IPT="N:Value"/></div>
 			<div>
-				價格:
-				<input type="number" min="0" step="0.01" style="flex:1 1 auto;" IPT="O.A:Value"/>
-				<select IPT="O.T:Value"></select>
+				<div class="FilledBar">
+					價格:
+					<input type="number" min="0" step="0.01" style="flex:1 1 auto;" IPT="O.A:Value"/>
+					<select IPT="O.T:Value"></select>
+				</div>
+				<div class="Folder">
+					<div>物價轉換工具:</div>
+					<div>台幣參考價格:<input type="number" step="1"></input></div>
+					<div>目的地:<select></select></div>
+					<div>目的地參考臺幣價格:<input type="number" readonly></input></div>
+				</div>
 			</div>
 			<div>
-				<table border="1">
+				<table border="0">
 					<thead>
 						<tr>
 							<th>支付方式: <select IPT="M:Value"></select></th>
@@ -35,8 +46,8 @@
 					</thead>
 					<tbody WidgetTag="PA"><tr>
 						<td PA="N:text"></td>
-						<td PA="V:text"></td>
-						<td PA="M:text"></td>
+						<td PA="V:text" style="border:2px solid blue;"></td>
+						<td PA="M:text" style="border:2px solid silver;"></td>
 					</tr></tbody>
 				</table>
 			</div>

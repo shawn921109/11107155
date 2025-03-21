@@ -20,46 +20,41 @@ document.currentScript.value=async (root,args)=>{
 	}
 
 	class YM {
-		constructor (d) {
+		constructor (d) { // {{{
 			if (!d) d = new Date();
 			if ("string" === typeof(d)) d=parseInt(d);
 			this.Value = ("number" === typeof(d))
 				? [Math.floor(d/100),(d%100)-1]
 				: [d.getFullYear(),d.getMonth()];
-		}
-
-		dist (dt) {
+		} // }}}
+		dist (dt) { // {{{
 			if (!(dt instanceof YM)) dt = new YM(dt);
 			return (dt.Value[0] - this.Value[0])*12+dt.Value[1]-this.Value[1];
-		}
-
-		toString () {
+		} // }}}
+		toString () { // {{{
 			return this.Value[0]+((v)=>v<10?("0"+v):v)(this.Value[1]+1);
-		}
+		} // }}}
 	}
 
-	let ref = new YM(new Date(2000,0,1));
-
 	class CvDB { // 轉換資料庫 {{{
-		constructor (url) {
-			this.Ref = new YM(new Date(2000,0,1))
-			if(url) this.DB = this.loadDB(url);
-		}
-		async loadDB (url) {
-			let db = await document.App.request(url);
-			db.USD=[1,1,1,1,1];
-			return db;
-		}
-		async convert (from, to, amount, dbn=0) {
-			let db = await this.DB;
-			console.log(db[from],db[to],db);
-			console.log("RESULT is ",amount*db[to][dbn]/db[from][dbn]);
-			return amount*db[to]/db[from];
-		}
-		async getRate (cn, x) {
-			let db = await this.DB;
-			let regression = await Piers.import(Piers.Env.PierPath+"Regression.js");
-			let eq = regression('polynomial', [
+		constructor (url) { // {{{
+			this.Ref = new YM(new Date(2000,0,1));
+			this._P_ = this.init(url);
+		}	// }}}
+		async init (url) { // {{{
+			this.DB = await document.App.request(url);
+			this.DB.USD = [1,1,1,1,1];
+			this.Regression = await Piers.import(Piers.Env.PierPath+"Regression.js");
+		}	// }}}
+		async waitInit () {
+			return await this._P_;
+		}	//
+		getRate (cn, x) { // {{{
+			let db = this.DB;
+			if (!(cn in db)) return 1;
+			console.log(db, cn, db[cn]);
+			if (!x) return db[cn][0];
+			let eq = this.Regression('polynomial', [
 				[this.Ref.dist("202502"),db[cn][1]],
 				[this.Ref.dist("202505"),db[cn][2]],
 				[this.Ref.dist("202508"),db[cn][3]],
@@ -68,9 +63,15 @@ document.currentScript.value=async (root,args)=>{
 			x = this.Ref.dist(x);
 			eq = eq.equation;
 			return (x*x*x*x)*eq[4] + (x*x*x)*eq[3] + (x*x)*eq[2] + (x)*eq[1] + eq[0] ;
-		}
+		}	// }}}
+		convert (from, to, amount, dt="") { // {{{
+			console.log("Convert",from,to,amount,dt);
+			return amount*this.getRate(to,dt)/this.getRate(from,dt);
+		}	// }}}
 	}	// }}}
-	let currency = new CvDB("tab/SmartBudget/Currency.json"), living = new CvDB("tab/SmartBudget/Life.json");
+
+	// let currency = new CvDB("tab/SmartBudget/Currency.json");
+	let living = new CvDB("tab/SmartBudget/Life.json");
 	// await currency.convert("EUR","TWD",10000);
 	// await living.convert("Taipei, Taiwan", "New York, NY, United States", 300, 4);
 
@@ -80,16 +81,11 @@ document.currentScript.value=async (root,args)=>{
 	console.log("Data is ",rst.R,rst.D);
 	*/
 
-(async () => {
-		console.log("TWD RATE is ",await currency.getRate("TWD","202507"));
-		console.log("TWD RATE is ",await currency.getRate("TWD","202510"));
-})();
-
 	class Input extends Form {
-		constructor (E) {
+		constructor (E) {	// {{{
 			super(E);
-
-			this.PTable = new Piers.Widget.List(this.E.querySelector('[WidgetTag="PA"]'));
+			this.XDB = new CvDB("tab/SmartBudget/Currency.json");
+			this.Hints = new Piers.Widget.List(this.E.querySelector('[WidgetTag="PA"]'));
 			if (E.CHANGE_BIND)
 				E.removeEventListener("change", E.CHANGE_BIND);
 			E.addEventListener("change", E.CHANGE_BIND=(evt)=>{
@@ -133,31 +129,40 @@ document.currentScript.value=async (root,args)=>{
 			});
 			(async (e)=>{ // O.T:Value
 				while (e.firstChild) e.removeChild(e.firstChild);
-				for (let k in (await currency.DB))
+				await this.XDB.waitInit();
+				for (let k in this.XDB.DB)
 					if(k in Dict)
 						Piers.DOM({ "T":"option", "A":{"value":k}, "C":[Dict[k]||k] }).join(e);
 			})(this.E.querySelector('[IPT="O.T:Value"]'));
 			this.updateHints();
-		}
-		updateHints () {
+		}	// }}}
+		updateHints () {	// {{{
 			let doc = this.get();
 			console.log("INPUT is ",doc);
 
-			let Payments={"TWD":"消費日換匯","C_TWD":"消費隔月換匯","CP_TWD":"隔月換匯"};
+			let Payments={"TWD":["消費日換匯"],"C_TWD":["消費隔月換匯"],"CP_TWD":["隔月換匯"]};
 			(async (e)=>{ // M:Value
-				while (e.firstChild) e.removeChild(e.firstChild);
 				let p={};
-				p[doc.O.T||"TWD"]="今日換匯";
+				p[doc.O.T||"TWD"]=["今日換匯"];
 				p=Object.assign(p,Payments);
+				while (e.firstChild) e.removeChild(e.firstChild);
 				for (let k in p)
 					Piers.DOM({ "T":"option", "A":{"value":k}, "C":[Dict[k]||k] }).join(e);
 				
-				this.PTable.set(Piers.OBJ(p).reduce((r,v,k)=>{
-					r.push({"N":Dict[k]||k,"V":10000,"M":p[k]});
-					return r;
-				},[]));
+				if( doc.O.T && doc.O.A ) {
+					await this.XDB.waitInit();
+					this.Hints.set(Piers.OBJ(p).reduce((r,v,k)=>{
+						r.push({
+							"N":Dict[k]||k,
+							"V":Math.floor(this.XDB.convert(doc.O.T,"TWD",doc.O.A)*1000)/1000,
+							"M":p[k][0]
+						});
+						return r;
+					},[]));
+				}
+				e.value=doc.M;
 			})(this.E.querySelector('[IPT="M:Value"]'));
-		}
+		}	// }}}
 	}
 
 	class Book {
