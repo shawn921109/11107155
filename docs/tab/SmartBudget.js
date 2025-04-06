@@ -49,9 +49,6 @@ document.currentScript.value=async (root,args)=>{
 		} // }}}
 	}
 
-	console.log((new YM()).add(8).toString());
-	console.log((new YM()).add(-8).toString());
-
 	class MapDB { // 轉換資料庫
 		constructor (url) { // {{{
 			this.Ref = new YM(new Date(2000,0,1));
@@ -122,7 +119,7 @@ document.currentScript.value=async (root,args)=>{
 					switch(btn.getAttribute("func")){
 					case "Add":
 						(function (doc) {
-							console.log(JSON.stringify(doc));
+							console.log("XXXXXXXXXXXXXX",JSON.stringify(doc));
 							doc.O = [doc.O].reduce((r,v)=>{
 								r[v.T] = parseFloat(v.A);
 								return r;
@@ -130,14 +127,12 @@ document.currentScript.value=async (root,args)=>{
 							((optdata)=>{
 								doc.R = optdata.find((v)=>v.K===doc.M).V;
 							})(gw('[WidgetTag="PA"]').OptData);
-							console.log("Add",doc);
 							bkh("Add",Object.assign({},doc));
-						})(gw(E).get());
+						})(gw(E).get({}));
 						break;
 					case "Clear":
-						(function (doc) {
-							gw(E).clear();
-						})(gw(E).get());
+						gw(E).clear().set({});
+						console.log(gw(E).get());
 						break;
 					case "Remove":
 						(function (doc) {
@@ -292,6 +287,8 @@ document.currentScript.value=async (root,args)=>{
 				if (!this.newChart) this.newChart = await Piers.import(Piers.Env.PierPath+"chart.js");
 				E.Chart = new this.newChart(E.querySelector("canvas"));
 			}
+			console.log(E.Chart);
+			E.Chart.reset();
 			E.Chart.draw_pie(
 				this.doc.L.reduce((r,v,i)=>{
 					if (v.N in r) v[v.N] += v.R; else r[v.N] = v.R;
